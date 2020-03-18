@@ -1,0 +1,12 @@
+bids_dir: "../../bids"
+prepdwi_dir: "../prepdwi"
+fmriprep_dir: "../fmriprep_1.5.4"
+out_dir: "out"
+work_dir: "work"
+entities:
+  datatype: dwi
+  space: T1w
+  suffix: preproc
+
+num_tracts: "100M"
+
