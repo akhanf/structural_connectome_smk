@@ -38,7 +38,6 @@ datatype = config['entities']['datatype']
 space = config['entities']['space']
 suffix = config['entities']['suffix']
 
-
 rule all:
     input:
         tracts = expand(join(work_dir,subj_sess_dir,'tracts.tck'),subject=subjects,session=sessions)
@@ -128,9 +127,18 @@ rule gen_tracts:
         fod_wm = join(work_dir,subj_sess_dir,'fod_wm.mif'),
     output:
         tracts = join(work_dir,subj_sess_dir,'tracts.tck')
+#    params:
+#        time = "24:00:00"
+#        cpus-per-task = "16"
+    resources:
+        time = 24*60, #in minutes
+        mem_mb = 8000 #in mb
+    threads: 8 # num cores
+#    log:
+#        join('logs','gen_tracts',subj_sess_prefix + '.log')
     envmodules:
         'mrtrix'
     shell:
-        "tckgen {input.fod_wm} {output.tracts} -select config['num_tracts'] -seed_dynamic {input.fod_wm} -backtrack -crop_at_gmwmi -maxlength 250 -cutoff 0.06"
+        "tckgen {input.fod_wm} {output.tracts} -select 100M -seed_dynamic {input.fod_wm} -backtrack -crop_at_gmwmi -maxlength 250 -cutoff 0.06 -nthreads {threads}"
    
 
