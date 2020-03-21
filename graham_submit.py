@@ -18,12 +18,7 @@ job_properties = read_job_properties(jobscript)
 # get account from CC_COMPUTE_ALLOC, else supply default account
 account = os.getenv('CC_COMPUTE_ALLOC', default='rrg-akhanf')
 
-#get log file if given in rule
-if len(job_properties['log']) > 0:
-    log = job_properties['log']
-else:
-    log = os.path.join('logs','slurm_%j_{}_{}.out'.format(job_properties['jobid'],job_properties['rule']))
-
+log = os.path.join('logs','slurm_%j_{}_{}.out'.format(job_properties['jobid'],job_properties['rule']))
 log = os.path.realpath(log)
 
 #create the log directory (slurm fails if doesn't exist)

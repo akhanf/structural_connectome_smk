@@ -2,6 +2,10 @@ from os.path import join
 from snakemake.utils import format
 from bids import BIDSLayout
 
+#use prepdwi singularity container for mrtrix3
+singularity: '/project/6007967/akhanf/singularity/bids-apps/khanlab_prepdwi_latest.sif'
+envmodules: 'mrtrix/3.0_RC3'
+
 configfile: "config.yaml"
 
 
@@ -25,6 +29,7 @@ sessions = layout.get_sessions(**entities)
 print(subjects)
 print(sessions)
 
+ntracts_million = 100
 
 #create strings including wildcards for subj_sess_dir and subj_sess_prefix
 if len(sessions) > 0:
@@ -38,24 +43,28 @@ datatype = config['entities']['datatype']
 space = config['entities']['space']
 suffix = config['entities']['suffix']
 
+
 rule all:
     input:
-        tracts = expand(join(work_dir,subj_sess_dir,'tracts.tck'),subject=subjects,session=sessions)
+        vis = expand(join('plots',subj_sess_prefix+'_connectome_vis.png'),subject=subjects,session=sessions),
 
  
 rule convert_to_mif:
     input:
         dwi_nii = join(prepdwi_dir,subj_sess_dir,datatype,subj_sess_prefix + '_dwi_space-T1w_preproc.nii.gz'),
         dwi_bval = join(prepdwi_dir,subj_sess_dir,datatype,subj_sess_prefix + '_dwi_space-T1w_preproc.bval'),
-        dwi_bvec = join(prepdwi_dir,subj_sess_dir,datatype,subj_sess_prefix + '_dwi_space-T1w_preproc.bvec')
+        dwi_bvec = join(prepdwi_dir,subj_sess_dir,datatype,subj_sess_prefix + '_dwi_space-T1w_preproc.bvec'),
+        mask_nii = join(prepdwi_dir,subj_sess_dir,datatype,subj_sess_prefix + '_dwi_space-T1w_brainmask.nii.gz')
     output:
         #use simplified naming for mrtrix work files
         dwi_mif = join(work_dir,subj_sess_dir,'dwi.mif'),
-        b0_mif = join(work_dir,subj_sess_dir,'b0.mif')
+        b0_mif = join(work_dir,subj_sess_dir,'b0.mif'),
+        mask_mif = join(work_dir,subj_sess_dir,'mask.mif')
     envmodules:
         'mrtrix'
     shell:
         "mrconvert {input.dwi_nii} {output.dwi_mif} -fslgrad {input.dwi_bvec} {input.dwi_bval} -datatype float32 -strides 0,0,0,1 &&"
+        "mrconvert {input.mask_nii} {output.mask_mif} &&"
         "dwiextract {output.dwi_mif} - -bzero | mrmath - mean {output.b0_mif} -axis 3"
 
 
@@ -112,33 +121,92 @@ rule compute_fod:
         rf_wm = join(work_dir,subj_sess_dir,'rf_wm.txt'),
         rf_gm = join(work_dir,subj_sess_dir,'rf_gm.txt'),
         rf_csf = join(work_dir,subj_sess_dir,'rf_csf.txt'),
-        mask_nii = join(prepdwi_dir,subj_sess_dir,datatype,subj_sess_prefix + '_dwi_space-T1w_brainmask.nii.gz')
+        mask_mif = join(work_dir,subj_sess_dir,'mask.mif')
     output:
         fod_wm = join(work_dir,subj_sess_dir,'fod_wm.mif'),
         fod_gm = join(work_dir,subj_sess_dir,'fod_gm.mif'),
         fod_csf = join(work_dir,subj_sess_dir,'fod_csf.mif')
+    resources:
+        time = 6*60, #in minutes
+    threads: 8
     envmodules:
         'mrtrix'
     shell:
-        "dwi2fod msmt_csd {input.dwi_mif} {input.rf_wm}  {output.fod_wm} {input.rf_gm}  {output.fod_gm} {input.rf_csf}  {output.fod_csf}"
-       
-rule gen_tracts:
+        "dwi2fod -mask {input.mask_mif} msmt_csd {input.dwi_mif} {input.rf_wm}  {output.fod_wm} {input.rf_gm}  {output.fod_gm} {input.rf_csf}  {output.fod_csf}"
+
+rule mtnormalise:
     input:
         fod_wm = join(work_dir,subj_sess_dir,'fod_wm.mif'),
+        fod_gm = join(work_dir,subj_sess_dir,'fod_gm.mif'),
+        fod_csf = join(work_dir,subj_sess_dir,'fod_csf.mif'),
+        mask_mif = join(work_dir,subj_sess_dir,'mask.mif')
+    output:
+        fodn_wm = join(work_dir,subj_sess_dir,'fodn_wm.mif'),
+        fodn_gm = join(work_dir,subj_sess_dir,'fodn_gm.mif'),
+        fodn_csf = join(work_dir,subj_sess_dir,'fodn_csf.mif')
+    shell:
+        "mtnormalise -mask {input.mask_mif} {input.fod_wm} {output.fodn_wm}  {input.fod_gm} {output.fodn_gm}  {input.fod_csf} {output.fodn_csf} "
+
+def get_walltime_tracts(wildcards):
+    return int(ntracts_million*0.25*60)
+
+rule gen_tracts:
+    input:
+        fodn_wm = join(work_dir,subj_sess_dir,'fodn_wm.mif'),
     output:
         tracts = join(work_dir,subj_sess_dir,'tracts.tck')
-#    params:
-#        time = "24:00:00"
-#        cpus-per-task = "16"
     resources:
-        time = 24*60, #in minutes
-        mem_mb = 8000 #in mb
+        time = get_walltime_tracts, #  24*60, #in minutes
+        mem_mb = 4000 #in mb
     threads: 8 # num cores
 #    log:
 #        join('logs','gen_tracts',subj_sess_prefix + '.log')
     envmodules:
         'mrtrix'
     shell:
-        "tckgen {input.fod_wm} {output.tracts} -select 100M -seed_dynamic {input.fod_wm} -backtrack -crop_at_gmwmi -maxlength 250 -cutoff 0.06 -nthreads {threads}"
+        "tckgen {input.fodn_wm} {output.tracts} -select {ntracts_million}M -seed_dynamic {input.fodn_wm} -backtrack -crop_at_gmwmi -maxlength 250 -cutoff 0.06 -nthreads {threads}"
    
 
+rule run_sift2:
+    input:
+        tracts = join(work_dir,subj_sess_dir,'tracts.tck'),
+        fodn_wm = join(work_dir,subj_sess_dir,'fodn_wm.mif'),
+        seg_5tt = join(work_dir,subj_sess_dir,'seg_5tt.mif')
+       
+    output:
+        weights = join(work_dir,subj_sess_dir,'sift2_weights.txt')
+
+    threads: 8 # num cores
+
+    shell:
+        "tcksift2 -act {input.seg_5tt} {input.tracts} {input.fodn_wm} {output.weights} -nthreads {threads}"
+
+
+rule convert_atlas_labels:
+    input:
+        aparcaseg_nii = join(fmriprep_dir,subj_sess_dir,'anat',subj_sess_prefix + '_desc-aparcaseg_dseg.nii.gz'),
+        lut_in = 'lut/FreeSurferColorLUT.txt',
+        lut_out = 'lut/fs_default.txt'
+    output:
+        atlas_labels = join(work_dir,subj_sess_dir,'atlas_aparcaseg.nii.gz')
+    shell:
+        "labelconvert {input.aparcaseg_nii} {input.lut_in} {input.lut_out} {output.atlas_labels}"
+
+
+rule gen_connectome:
+    input:  
+        tracts = join(work_dir,subj_sess_dir,'tracts.tck'),
+        atlas_labels = join(work_dir,subj_sess_dir,'atlas_aparcaseg.nii.gz'),
+        weights = join(work_dir,subj_sess_dir,'sift2_weights.txt')
+    output:
+        connectome = join(work_dir,subj_sess_dir,'connectome_aparcaseg.csv')
+    shell:
+        "tck2connectome -tck_weights_in {input.weights} {input.tracts} {input.atlas_labels} {output.connectome}"
+
+rule visualize_connectome:
+    input:
+        connectome = join(work_dir,subj_sess_dir,'connectome_aparcaseg.csv')
+    output:
+        report(join('plots',subj_sess_prefix + '_connectome_vis.png'),caption='report/connectome_vis.rst',category='Connectome Visualization')
+    notebook:
+        'notebooks/vis_connectome.ipynb'
