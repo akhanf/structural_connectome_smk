@@ -159,10 +159,10 @@ rule visualize_connectome:
     input:
         connectome = join(work_dir,subj_sess_dir,'connectome_aparcaseg.csv')
     output:
-        report(join('plots',f'{subj_sess_prefix}_connectome_vis.png'),caption='report/connectome_vis.rst',category='Connectome Visualization')
+        report(join('plots',f'{subj_sess_prefix}_connectome_vis.png'),caption='../report/connectome_vis.rst',category='Connectome Visualization')
     log:
         f'logs/visualize_connectome/{subj_sess_prefix}.log'
     notebook:
-        'notebooks/vis_connectome.ipynb'
+        '../notebooks/vis_connectome.ipynb'
 
 

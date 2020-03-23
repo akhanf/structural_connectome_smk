@@ -25,7 +25,6 @@ entities = config['entities']
 subjects = layout.get_subjects(**entities)
 sessions = layout.get_sessions(**entities)
 
-subjects = subjects[0]
 print(subjects)
 print(sessions)
 

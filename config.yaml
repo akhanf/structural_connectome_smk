@@ -1,11 +1,11 @@
-bids_dir: "../../bids"
-prepdwi_dir: "../prepdwi_v0.0.12c"
-fmriprep_dir: "../fmriprep_1.5.0"
-out_dir: "out"
-work_dir: "work"
+bids_dir: ../../bids
+prepdwi_dir: ../prepdwi_v0.0.12c
+fmriprep_dir: ../fmriprep_1.5.0
+out_dir: out
+work_dir: work
 
 #use prepdwi singularity container for mrtrix3
-singularity: '/project/6007967/akhanf/singularity/bids-apps/khanlab_prepdwi_latest.sif'
+singularity: /project/6007967/akhanf/singularity/bids-apps/khanlab_prepdwi_latest.sif
 
 #for grabbbing data from prepdwi
 entities:
@@ -14,5 +14,6 @@ entities:
   suffix: preproc
 
 #mrtrix tracking, tracts (in millions)
-ntracts_million = 10
+ntracts_million: 10
+
 
