@@ -1,18 +1,19 @@
 from os.path import join
 from snakemake.utils import format
 from bids import BIDSLayout
-
+import pandas as pd
 
 configfile: "config.yaml"
 
+#load participants.tsv file, and strip of sub- from participant_id column
+df = pd.read_table(config['participants_tsv'])
+subjects = df.participant_id.str.slice(4).to_list() 
 
-# bids_dir and out_dir set in json file.
+
 # can also override at command-line with e.g.:  --config bids_dir='path/to/dir'  or --configfile ...
-bids_dir = config['bids_dir']
 prepdwi_dir = join(config['prepdwi_dir'],'prepdwi')
 fmriprep_dir = join(config['fmriprep_dir'],'fmriprep')
-out_dir = config['out_dir']
-work_dir = config['work_dir']
+
 
 #set container for --use-singularity
 container: config['singularity']
@@ -22,11 +23,9 @@ layout = BIDSLayout(prepdwi_dir, validate=False)
 
 #get entities from cfg file to select input files from prepdwi
 entities = config['entities']
-subjects = layout.get_subjects(**entities)
+#subjects = layout.get_subjects(**entities)  #subjects from participants.tsv
 sessions = layout.get_sessions(**entities)
 
-print(subjects)
-print(sessions)
 
 ntracts_million = config['ntracts_million']
 
@@ -37,10 +36,6 @@ if len(sessions) > 0:
 else:
     subj_sess_dir = 'sub-{subject}'
     subj_sess_prefix = 'sub-{subject}'
-
-datatype = config['entities']['datatype']
-space = config['entities']['space']
-suffix = config['entities']['suffix']
 
 
 rule all:

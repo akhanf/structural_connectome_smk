@@ -1,14 +1,14 @@
 rule convert_to_mif:
     input:
-        dwi_nii = join(prepdwi_dir,subj_sess_dir,datatype,f'{subj_sess_prefix}_dwi_space-T1w_preproc.nii.gz'),
-        dwi_bval = join(prepdwi_dir,subj_sess_dir,datatype,f'{subj_sess_prefix}_dwi_space-T1w_preproc.bval'),
-        dwi_bvec = join(prepdwi_dir,subj_sess_dir,datatype,f'{subj_sess_prefix}_dwi_space-T1w_preproc.bvec'),
-        mask_nii = join(prepdwi_dir,subj_sess_dir,datatype,f'{subj_sess_prefix}_dwi_space-T1w_brainmask.nii.gz')
+        dwi_nii = join(prepdwi_dir,subj_sess_dir,'dwi',f'{subj_sess_prefix}_dwi_space-T1w_preproc.nii.gz'),
+        dwi_bval = join(prepdwi_dir,subj_sess_dir,'dwi',f'{subj_sess_prefix}_dwi_space-T1w_preproc.bval'),
+        dwi_bvec = join(prepdwi_dir,subj_sess_dir,'dwi',f'{subj_sess_prefix}_dwi_space-T1w_preproc.bvec'),
+        mask_nii = join(prepdwi_dir,subj_sess_dir,'dwi',f'{subj_sess_prefix}_dwi_space-T1w_brainmask.nii.gz')
     output:
         #use simplified naming for mrtrix work files
-        dwi_mif = join(work_dir,subj_sess_dir,'dwi.mif'),
-        b0_mif = join(work_dir,subj_sess_dir,'b0.mif'),
-        mask_mif = join(work_dir,subj_sess_dir,'mask.mif')
+        dwi_mif = join(subj_sess_dir,'dwi.mif'),
+        b0_mif = join(subj_sess_dir,'b0.mif'),
+        mask_mif = join(subj_sess_dir,'mask.mif')
     log:
         f'logs/convert_to_mif/{subj_sess_prefix}.log'
     shell:
@@ -25,13 +25,13 @@ rule gen_5tt:
         lut_output = 'lut/FreeSurfer2ACT.txt',
         aparcaseg_nii = join(fmriprep_dir,subj_sess_dir,'anat',f'{subj_sess_prefix}_desc-aparcaseg_dseg.nii.gz')
     output:
-        indices_mif = join(work_dir,subj_sess_dir,'indices.mif'),
-        cgm_mif = temp(join(work_dir,subj_sess_dir,'cgm.mif')),
-        sgm_mif = temp(join(work_dir,subj_sess_dir,'sgm.mif')),
-        wm_mif = temp(join(work_dir,subj_sess_dir,'wm.mif')),
-        csf_mif = temp(join(work_dir,subj_sess_dir,'csf.mif')),
-        path_mif = temp(join(work_dir,subj_sess_dir,'path.mif')),
-        seg_5tt = join(work_dir,subj_sess_dir,'seg_5tt.mif')
+        indices_mif = join(subj_sess_dir,'indices.mif'),
+        cgm_mif = temp(join(subj_sess_dir,'cgm.mif')),
+        sgm_mif = temp(join(subj_sess_dir,'sgm.mif')),
+        wm_mif = temp(join(subj_sess_dir,'wm.mif')),
+        csf_mif = temp(join(subj_sess_dir,'csf.mif')),
+        path_mif = temp(join(subj_sess_dir,'path.mif')),
+        seg_5tt = join(subj_sess_dir,'seg_5tt.mif')
     log:
         f'logs/gen_5tt/{subj_sess_prefix}.log'
     shell:
@@ -46,16 +46,16 @@ rule gen_5tt:
 
 rule estimate_response:
     input:         
-        dwi_mif = join(work_dir,subj_sess_dir,'dwi.mif'),
-        seg_5tt = join(work_dir,subj_sess_dir,'seg_5tt.mif')
+        dwi_mif = join(subj_sess_dir,'dwi.mif'),
+        seg_5tt = join(subj_sess_dir,'seg_5tt.mif')
     params:
-        tempdir = join(work_dir,subj_sess_dir,'tmp_dwi2response')
+        tempdir = join(subj_sess_dir,'tmp_dwi2response')
     #can add additional params here (lmax)
     output:
-        rf_wm = join(work_dir,subj_sess_dir,'rf_wm.txt'),
-        rf_gm = join(work_dir,subj_sess_dir,'rf_gm.txt'),
-        rf_csf = join(work_dir,subj_sess_dir,'rf_csf.txt'),
-        rf_voxels = join(work_dir,subj_sess_dir,'rf_voxels.mif')
+        rf_wm = join(subj_sess_dir,'rf_wm.txt'),
+        rf_gm = join(subj_sess_dir,'rf_gm.txt'),
+        rf_csf = join(subj_sess_dir,'rf_csf.txt'),
+        rf_voxels = join(subj_sess_dir,'rf_voxels.mif')
     threads: 8
     log:
         f'logs/estimate_response/{subj_sess_prefix}.log'
@@ -65,15 +65,15 @@ rule estimate_response:
     
 rule compute_fod:
     input:
-        dwi_mif = join(work_dir,subj_sess_dir,'dwi.mif'),
-        rf_wm = join(work_dir,subj_sess_dir,'rf_wm.txt'),
-        rf_gm = join(work_dir,subj_sess_dir,'rf_gm.txt'),
-        rf_csf = join(work_dir,subj_sess_dir,'rf_csf.txt'),
-        mask_mif = join(work_dir,subj_sess_dir,'mask.mif')
+        dwi_mif = join(subj_sess_dir,'dwi.mif'),
+        rf_wm = join(subj_sess_dir,'rf_wm.txt'),
+        rf_gm = join(subj_sess_dir,'rf_gm.txt'),
+        rf_csf = join(subj_sess_dir,'rf_csf.txt'),
+        mask_mif = join(subj_sess_dir,'mask.mif')
     output:
-        fod_wm = join(work_dir,subj_sess_dir,'fod_wm.mif'),
-        fod_gm = join(work_dir,subj_sess_dir,'fod_gm.mif'),
-        fod_csf = join(work_dir,subj_sess_dir,'fod_csf.mif')
+        fod_wm = join(subj_sess_dir,'fod_wm.mif'),
+        fod_gm = join(subj_sess_dir,'fod_gm.mif'),
+        fod_csf = join(subj_sess_dir,'fod_csf.mif')
     resources:
         time = 6*60, #in minutes
     threads: 8
@@ -84,14 +84,14 @@ rule compute_fod:
 
 rule mtnormalise:
     input:
-        fod_wm = join(work_dir,subj_sess_dir,'fod_wm.mif'),
-        fod_gm = join(work_dir,subj_sess_dir,'fod_gm.mif'),
-        fod_csf = join(work_dir,subj_sess_dir,'fod_csf.mif'),
-        mask_mif = join(work_dir,subj_sess_dir,'mask.mif')
+        fod_wm = join(subj_sess_dir,'fod_wm.mif'),
+        fod_gm = join(subj_sess_dir,'fod_gm.mif'),
+        fod_csf = join(subj_sess_dir,'fod_csf.mif'),
+        mask_mif = join(subj_sess_dir,'mask.mif')
     output:
-        fodn_wm = join(work_dir,subj_sess_dir,'fodn_wm.mif'),
-        fodn_gm = join(work_dir,subj_sess_dir,'fodn_gm.mif'),
-        fodn_csf = join(work_dir,subj_sess_dir,'fodn_csf.mif')
+        fodn_wm = join(subj_sess_dir,'fodn_wm.mif'),
+        fodn_gm = join(subj_sess_dir,'fodn_gm.mif'),
+        fodn_csf = join(subj_sess_dir,'fodn_csf.mif')
     log:
         f'logs/mtnormalise/{subj_sess_prefix}.log'
     shell:
@@ -99,9 +99,9 @@ rule mtnormalise:
 
 rule gen_tracts:
     input:
-        fodn_wm = join(work_dir,subj_sess_dir,'fodn_wm.mif'),
+        fodn_wm = join(subj_sess_dir,'fodn_wm.mif'),
     output:
-        tracts = join(work_dir,subj_sess_dir,'tracts.tck')
+        tracts = join(subj_sess_dir,'tracts.tck')
     params:
         ntracts = f'{ntracts_million}M'
     resources:
@@ -116,12 +116,12 @@ rule gen_tracts:
 
 rule run_sift2:
     input:
-        tracts = join(work_dir,subj_sess_dir,'tracts.tck'),
-        fodn_wm = join(work_dir,subj_sess_dir,'fodn_wm.mif'),
-        seg_5tt = join(work_dir,subj_sess_dir,'seg_5tt.mif')
+        tracts = join(subj_sess_dir,'tracts.tck'),
+        fodn_wm = join(subj_sess_dir,'fodn_wm.mif'),
+        seg_5tt = join(subj_sess_dir,'seg_5tt.mif')
        
     output:
-        weights = join(work_dir,subj_sess_dir,'sift2_weights.txt')
+        weights = join(subj_sess_dir,'sift2_weights.txt')
 
     threads: 8 # num cores
     log:
@@ -136,7 +136,7 @@ rule convert_atlas_labels:
         lut_in = 'lut/FreeSurferColorLUT.txt',
         lut_out = 'lut/fs_default.txt'
     output:
-        atlas_labels = join(work_dir,subj_sess_dir,'atlas_aparcaseg.nii.gz')
+        atlas_labels = join(subj_sess_dir,'atlas_aparcaseg.nii.gz')
     log:
         f'logs/convert_atlas_labels/{subj_sess_prefix}.log'
     shell:
@@ -145,11 +145,11 @@ rule convert_atlas_labels:
 
 rule gen_connectome:
     input:  
-        tracts = join(work_dir,subj_sess_dir,'tracts.tck'),
-        atlas_labels = join(work_dir,subj_sess_dir,'atlas_aparcaseg.nii.gz'),
-        weights = join(work_dir,subj_sess_dir,'sift2_weights.txt')
+        tracts = join(subj_sess_dir,'tracts.tck'),
+        atlas_labels = join(subj_sess_dir,'atlas_aparcaseg.nii.gz'),
+        weights = join(subj_sess_dir,'sift2_weights.txt')
     output:
-        connectome = join(work_dir,subj_sess_dir,'connectome_aparcaseg.csv')
+        connectome = join(subj_sess_dir,'connectome_aparcaseg.csv')
     log:
         f'logs/gen_connectome/{subj_sess_prefix}.log'
     shell:
@@ -157,12 +157,21 @@ rule gen_connectome:
 
 rule visualize_connectome:
     input:
-        connectome = join(work_dir,subj_sess_dir,'connectome_aparcaseg.csv')
+        connectome = join(subj_sess_dir,'connectome_aparcaseg.csv')
     output:
         report(join('plots',f'{subj_sess_prefix}_connectome_vis.png'),caption='../report/connectome_vis.rst',category='Connectome Visualization')
-    log:
-        f'logs/visualize_connectome/{subj_sess_prefix}.log'
-    notebook:
-        '../notebooks/vis_connectome.ipynb'
-
+    run:
+        import numpy as np
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        in_csv = input['connectome']
+        out_png = output[0]
+        C = np.loadtxt(in_csv)
+        #symmetrize C
+        C = C + C.transpose()
+        #plot it
+        plt.ioff()
+        plt.imshow(np.log(C+0.0001))
+        plt.savefig(out_png)
 

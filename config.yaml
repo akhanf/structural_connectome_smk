@@ -1,13 +1,14 @@
-bids_dir: ../../bids
-prepdwi_dir: ../prepdwi_v0.0.12c
-fmriprep_dir: ../fmriprep_1.5.0
-out_dir: out
-work_dir: work
+prepdwi_dir: /path/to/prepdwi/folder
+fmriprep_dir: /path/to/fmriprep/folder
+
+participants_tsv: participants.tsv
+
+
 
 #use prepdwi singularity container for mrtrix3
 singularity: /project/6007967/akhanf/singularity/bids-apps/khanlab_prepdwi_latest.sif
 
-#for grabbbing data from prepdwi
+#for grabbing data from prepdwi
 entities:
   datatype: dwi
   space: T1w
