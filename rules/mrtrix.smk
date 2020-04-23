@@ -160,18 +160,6 @@ rule visualize_connectome:
         connectome = join(subj_sess_dir,'connectome_aparcaseg.csv')
     output:
         report(join('plots',f'{subj_sess_prefix}_connectome_vis.png'),caption='../report/connectome_vis.rst',category='Connectome Visualization')
-    run:
-        import numpy as np
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-        in_csv = input['connectome']
-        out_png = output[0]
-        C = np.loadtxt(in_csv)
-        #symmetrize C
-        C = C + C.transpose()
-        #plot it
-        plt.ioff()
-        plt.imshow(np.log(C+0.0001))
-        plt.savefig(out_png)
+    conda: '../envs/vis.yml'
+    script: '../scripts/visualize_connectome.py'
 
