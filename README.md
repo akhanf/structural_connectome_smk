@@ -1,4 +1,4 @@
-# Snakemake workflow: `structural_connectom_smk`
+# Snakemake workflow
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥3.12.0-brightgreen.svg)](https://snakemake.bitbucket.io)
 
